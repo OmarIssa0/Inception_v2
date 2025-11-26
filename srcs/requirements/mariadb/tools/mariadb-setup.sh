@@ -19,6 +19,7 @@ if [ ! -d "/var/lib/mysql/$MYSQL_DATABASE" ]; then
 	echo "Initializing database..."
 	SQL_FILE="/tmp/init_db.sql"
 	cat >"$SQL_FILE" <<EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
 CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_USER_PASSWORD}';
 GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%';
@@ -29,12 +30,24 @@ EOF
 	mysqld_safe --skip-networking &
 	PID=$!
 	# * Wait until MariaDB is ready
-	until mysqladmin ping -uroot -p"$MYSQL_ROOT_PASSWORD" --silent >/dev/null 2>&1; do
+	start=0
+	timeout=${MYSQL_INIT_TIMEOUT:-30}
+
+	until mysqladmin ping --silent >/dev/null 2>&1; do
+		echo "Waiting for MariaDB to start..."
+		sleep 1
+		start=$((start + 1))
+		if [ "$start" -ge "$timeout" ]; then
+			echo "Error: MariaDB did not start within $timeout seconds."
+			exit 1
+		fi
+	done
+	until mysqladmin ping --silent >/dev/null 2>&1; do
 		echo "Waiting for MariaDB to start..."
 		sleep 1
 	done
 	# * Run initialization
-	mysql -uroot -p"$MYSQL_ROOT_PASSWORD" <"$SQL_FILE"
+	mysql < "$SQL_FILE"
 	rm -f "$SQL_FILE"
 
 	# * Stop temporary server

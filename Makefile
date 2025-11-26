@@ -1,6 +1,6 @@
 # Variables
 COMPOSE_FILE = srcs/docker-compose.yml
-DATA_PATH = /home/$(USER)/data
+DATA_PATH = /home/oissa/data
 DB_PATH = $(DATA_PATH)/mariadb
 WP_PATH = $(DATA_PATH)/wordpress
 
