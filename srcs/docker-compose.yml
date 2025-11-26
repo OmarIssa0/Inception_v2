@@ -62,7 +62,7 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: /home/oissa/data/mariadb
+      device: /home/oissa/data/wordpress
       o: bind
 
 networks:
